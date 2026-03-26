@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoRoset — Conversor de Convenções Geológicas</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <!-- Plotly -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <style>
+    :root {
+      --gold: #C8961E;
+      --gold-light: #F5D98A;
+      --bg: #F8F7F2;
+      --card-bg: #FFFFFF;
+      --text: #1A1A1A;
+      --muted: #6B6B6B;
+      --border: #E0DDD4;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; }
+
+    /* ── Navbar ── */
+    .navbar { background: #1A1A2E; border-bottom: 3px solid var(--gold); }
+    .navbar-brand { color: var(--gold-light) !important; font-weight: 700; font-size: 1.3rem; letter-spacing: .5px; }
+    .navbar-brand span { color: #fff; font-weight: 300; }
+    .nav-badge { background: var(--gold); color: #1A1A2E; font-size: .65rem; padding: 2px 7px; border-radius: 20px; font-weight: 700; vertical-align: middle; }
+
+    /* ── Page tabs ── */
+    .page-tabs { background: #fff; border-bottom: 2px solid var(--border); position: sticky; top: 56px; z-index: 99; }
+    .page-tabs .nav-link { color: var(--muted); font-weight: 500; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; padding: .65rem 1.1rem; }
+    .page-tabs .nav-link.active { color: var(--gold); border-bottom-color: var(--gold); background: none; }
+    .page-tabs .nav-link:hover:not(.active) { color: var(--text); }
+
+    /* ── Cards ── */
+    .card { border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .card-header-gold { background: linear-gradient(135deg, #1A1A2E 0%, #2D2D4E 100%); color: var(--gold-light); border-radius: 9px 9px 0 0 !important; padding: .7rem 1.1rem; font-weight: 600; }
+
+    /* ── Mode tabs (Individual / Tabela) ── */
+    .mode-tabs .nav-link { border-radius: 6px; color: var(--muted); font-size: .9rem; }
+    .mode-tabs .nav-link.active { background: var(--gold); color: #fff; font-weight: 600; }
+
+    /* ── Arrow badge ── */
+    .arrow-pill { background: #1A1A2E; color: var(--gold-light); border-radius: 20px; padding: 4px 14px; font-size: .95rem; }
+
+    /* ── Metric box ── */
+    .metric-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: .75rem 1rem; text-align: center; }
+    .metric-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--gold); }
+
+    /* ── Buttons ── */
+    .btn-convert { background: var(--gold); border: none; color: #fff; font-weight: 600; padding: .5rem 1.6rem; border-radius: 8px; }
+    .btn-convert:hover { background: #b8840e; color: #fff; }
+    .btn-outline-download { border: 2px solid var(--gold); color: var(--gold); font-weight: 600; border-radius: 8px; }
+    .btn-outline-download:hover { background: var(--gold); color: #fff; }
+
+    /* ── Table ── */
+    .tbl-editable td { padding: .3rem .5rem; }
+    .tbl-editable td input { border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; width: 110px; font-size: .9rem; }
+    .tbl-editable td input:focus { outline: 2px solid var(--gold); border-color: transparent; }
+    .result-table th { background: #1A1A2E; color: var(--gold-light); font-weight: 600; font-size: .82rem; }
+    .result-table td { font-size: .88rem; }
+
+    /* ── Warning ── */
+    .warn-isatis { background: #fff8e1; border-left: 4px solid #ffc107; padding: .6rem .9rem; border-radius: 4px; font-size: .85rem; }
+
+    /* ── Stereonet canvas ── */
+    #stereonet-plot, #vario-plot, #block-plot { border-radius: 8px; overflow: hidden; }
+
+    /* ── Home hero ── */
+    .hero { background: linear-gradient(135deg, #1A1A2E 0%, #2D2D4E 100%); color: #fff; padding: 3rem 2rem; border-radius: 12px; }
+    .hero h1 { color: var(--gold-light); font-weight: 800; }
+    .convention-table th { background: #1A1A2E; color: var(--gold-light); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .metric-value { font-size: 1.2rem; }
+      .page-tabs .nav-link { font-size: .82rem; padding: .5rem .7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ NAVBAR ═══════════════════ -->
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="#">🪨 GeoRoset <span>— Conversor Geológico</span></a>
+    <span class="nav-badge">v0.1</span>
+    <a href="https://github.com/jessicadamatta/georoset" target="_blank"
+       class="ms-auto text-decoration-none" style="color:#aaa; font-size:.85rem;">
+      <i class="bi bi-github"></i> GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ═══════════════════ PAGE TABS ═══════════════════ -->
+<div class="page-tabs">
+  <div class="container-fluid px-4">
+    <ul class="nav" id="mainTabs">
+      <li class="nav-item"><a class="nav-link active" href="#" onclick="showPage('home',this)">🏠 Início</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="showPage('discos',this)">🪨 Discos</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="showPage('vario',this)">📡 Variograma</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="showPage('blocos',this)">📦 Blocos</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="showPage('coords',this)">📍 Coordenadas</a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<div class="container-fluid px-4 py-4" style="max-width:1300px">
+
+  <!-- ── HOME ── -->
+  <div id="page-home">
+    <div class="hero mb-4">
+      <h1 class="mb-1">🪨 GeoRoset</h1>
+      <p class="lead mb-3">Conversor open-source de convenções geológicas entre <strong>Leapfrog</strong>, <strong>Isatis.neo</strong> e <strong>Vulcan</strong>.</p>
+      <button class="btn btn-convert btn-lg" onclick="showPage('discos', document.querySelectorAll('#mainTabs .nav-link')[1])">
+        🚀 Começar a converter
+      </button>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="fw-bold mb-3">Como usar</h5>
+            <ol class="mb-0" style="line-height:2">
+              <li>Selecione a aba correspondente ao tipo de dado</li>
+              <li>Escolha o <strong>software de origem</strong> e o de <strong>destino</strong></li>
+              <li><strong>Individual:</strong> insira os ângulos e clique em Converter</li>
+              <li><strong>Tabela:</strong> insira múltiplos valores ou cole um CSV</li>
+              <li>Verifique o gráfico — os objetos devem se sobrepor</li>
+              <li>Baixe os resultados em CSV</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="fw-bold mb-3">Páginas disponíveis</h5>
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Página</th><th>Converte</th><th>Gráfico</th></tr></thead>
+              <tbody>
+                <tr><td>🪨 Discos</td><td>Dip/Dir ↔ Bearing/Plunge</td><td>Esteronet</td></tr>
+                <tr><td>📡 Variograma</td><td>Ângulos de anisotropia</td><td>Elipsoide 3D</td></tr>
+                <tr><td>📦 Blocos</td><td>Rotação dos eixos</td><td>Caixa 3D</td></tr>
+                <tr><td>📍 Coordenadas</td><td>Convenção de Z</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header-gold">📐 Convenções resumidas por software</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-bordered convention-table mb-0">
+            <thead>
+              <tr><th></th><th>Leapfrog</th><th>Isatis.neo</th><th>Vulcan</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Disco</strong></td>
+                <td>Dip Direction + Dip</td>
+                <td>Azimute + Dip <em>(igual LF)</em></td>
+                <td>Bearing da <strong>normal</strong> + Plunge</td>
+              </tr>
+              <tr>
+                <td><strong>Variograma</strong></td>
+                <td>Z-X-Z: Rz(−α)·Rx(−β)·Rz(γ)</td>
+                <td>Z-X-X: Rz(−α)·Rx(−β)·Rx(ω) ⚠️</td>
+                <td>X-Y-Z: Rx(α)·Ry(β)·Rz(γ)</td>
+              </tr>
+              <tr>
+                <td><strong>Blocos</strong></td>
+                <td>Z-X-Z: Rz(α)·Rx(β)·Rz(γ)</td>
+                <td>Z-X-Z <em>(sinais a confirmar)</em></td>
+                <td>X-Y-Z: Rx(α)·Ry(β)·Rz(γ)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       ── DISCOS ESTRUTURAIS ──
+  ══════════════════════════════════════════════════ -->
+  <div id="page-discos" class="d-none">
+    <h4 class="fw-bold mb-1">🪨 Discos Estruturais</h4>
+    <p class="text-muted small mb-3">Converta dip/dip_direction entre Leapfrog, Isatis.neo e Vulcan.</p>
+
+    <!-- Origem → Destino -->
+    <div class="row g-3 align-items-end mb-3">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Software de origem</label>
+        <select class="form-select" id="disc-src">
+          <option>Leapfrog / Isatis.neo</option>
+          <option>Vulcan</option>
+        </select>
+      </div>
+      <div class="col-md-1 text-center pb-1"><span class="arrow-pill">→</span></div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Software de destino</label>
+        <select class="form-select" id="disc-dst">
+          <option>Vulcan</option>
+          <option>Leapfrog / Isatis.neo</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Mode tabs -->
+    <ul class="nav mode-tabs gap-2 mb-3" id="disc-mode-tabs">
+      <li class="nav-item"><a class="nav-link active px-4 py-2" href="#" onclick="switchMode('disc','individual',this)">🔢 Individual</a></li>
+      <li class="nav-item"><a class="nav-link px-4 py-2" href="#" onclick="switchMode('disc','tabela',this)">📋 Tabela</a></li>
+    </ul>
+
+    <!-- Individual -->
+    <div id="disc-mode-individual">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="card">
+            <div class="card-header-gold">Entrada</div>
+            <div class="card-body" id="disc-input-fields">
+              <!-- gerado dinamicamente -->
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-header-gold">Resultado</div>
+            <div class="card-body">
+              <div class="row g-3 mb-3" id="disc-metrics"></div>
+              <div id="stereonet-plot" style="height:360px"></div>
+              <div id="disc-isatis-warn" class="warn-isatis mt-2 d-none">
+                ⚠️ Isatis.neo: sinal do mergulho a confirmar com documentação oficial.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div id="disc-mode-tabela" class="d-none">
+      <div class="card mb-3">
+        <div class="card-header-gold">Entrada — <span id="disc-tbl-src-label"></span></div>
+        <div class="card-body">
+          <div class="mb-2 d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-secondary" onclick="discAddRow()">＋ Adicionar linha</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="discPasteCSV()">📋 Colar CSV</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="discLoadExample()">📂 Carregar exemplo</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm tbl-editable" id="disc-input-table">
+              <thead id="disc-input-thead"></thead>
+              <tbody id="disc-input-tbody"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-convert mt-2" onclick="convertDiscTable()">🔄 Converter Tabela</button>
+        </div>
+      </div>
+
+      <div class="card d-none" id="disc-result-card">
+        <div class="card-header-gold">Resultado da conversão</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <p class="fw-semibold mb-1 text-muted small">ENTRADA</p>
+              <div class="table-responsive"><table class="table table-sm result-table" id="disc-result-in"></table></div>
+            </div>
+            <div class="col-md-6">
+              <p class="fw-semibold mb-1 text-muted small">SAÍDA</p>
+              <div class="table-responsive"><table class="table table-sm result-table" id="disc-result-out"></table></div>
+            </div>
+          </div>
+          <button class="btn btn-outline-download mt-3" onclick="downloadDiscResult()">⬇️ Baixar CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       ── VARIOGRAMA ──
+  ══════════════════════════════════════════════════ -->
+  <div id="page-vario" class="d-none">
+    <h4 class="fw-bold mb-1">📡 Parâmetros de Variograma</h4>
+    <p class="text-muted small mb-3">Converta ângulos de anisotropia entre Leapfrog, Isatis.neo e Vulcan.</p>
+
+    <div class="row g-3 align-items-end mb-3">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Software de origem</label>
+        <select class="form-select" id="vario-src">
+          <option>Leapfrog</option><option>Vulcan</option><option>Isatis.neo</option>
+        </select>
+      </div>
+      <div class="col-md-1 text-center pb-1"><span class="arrow-pill">→</span></div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Software de destino</label>
+        <select class="form-select" id="vario-dst">
+          <option>Vulcan</option><option>Leapfrog</option><option>Isatis.neo</option>
+        </select>
+      </div>
+    </div>
+
+    <ul class="nav mode-tabs gap-2 mb-3" id="vario-mode-tabs">
+      <li class="nav-item"><a class="nav-link active px-4 py-2" href="#" onclick="switchMode('vario','individual',this)">🔢 Individual</a></li>
+      <li class="nav-item"><a class="nav-link px-4 py-2" href="#" onclick="switchMode('vario','tabela',this)">📋 Tabela</a></li>
+    </ul>
+
+    <!-- Individual -->
+    <div id="vario-mode-individual">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="card">
+            <div class="card-header-gold">Entrada</div>
+            <div class="card-body" id="vario-input-fields"></div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-header-gold">Resultado</div>
+            <div class="card-body">
+              <div class="row g-3 mb-3" id="vario-metrics"></div>
+              <div id="vario-plot" style="height:380px"></div>
+              <div id="vario-isatis-warn" class="warn-isatis mt-2 d-none">
+                ⚠️ Isatis.neo: sinal do mergulho a confirmar com documentação oficial.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div id="vario-mode-tabela" class="d-none">
+      <div class="card mb-3">
+        <div class="card-header-gold">Entrada</div>
+        <div class="card-body">
+          <div class="mb-2 d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-secondary" onclick="varioAddRow()">＋ Adicionar linha</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="varioPasteCSV()">📋 Colar CSV</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="varioLoadExample()">📂 Carregar exemplo</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm tbl-editable">
+              <thead id="vario-input-thead"></thead>
+              <tbody id="vario-input-tbody"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-convert mt-2" onclick="convertVarioTable()">🔄 Converter Tabela</button>
+        </div>
+      </div>
+      <div class="card d-none" id="vario-result-card">
+        <div class="card-header-gold">Resultado</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6"><p class="fw-semibold mb-1 text-muted small">ENTRADA</p>
+              <div class="table-responsive"><table class="table table-sm result-table" id="vario-result-in"></table></div></div>
+            <div class="col-md-6"><p class="fw-semibold mb-1 text-muted small">SAÍDA</p>
+              <div class="table-responsive"><table class="table table-sm result-table" id="vario-result-out"></table></div></div>
+          </div>
+          <button class="btn btn-outline-download mt-3" onclick="downloadVarioResult()">⬇️ Baixar CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       ── MODELO DE BLOCOS ──
+  ══════════════════════════════════════════════════ -->
+  <div id="page-blocos" class="d-none">
+    <h4 class="fw-bold mb-1">📦 Modelo de Blocos</h4>
+    <p class="text-muted small mb-3">Converta ângulos de rotação do grid de blocos.</p>
+
+    <div class="row g-3 align-items-end mb-3">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Software de origem</label>
+        <select class="form-select" id="blk-src">
+          <option>Leapfrog</option><option>Vulcan</option><option>Isatis.neo</option>
+        </select>
+      </div>
+      <div class="col-md-1 text-center pb-1"><span class="arrow-pill">→</span></div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Software de destino</label>
+        <select class="form-select" id="blk-dst">
+          <option>Vulcan</option><option>Leapfrog</option><option>Isatis.neo</option>
+        </select>
+      </div>
+    </div>
+
+    <ul class="nav mode-tabs gap-2 mb-3">
+      <li class="nav-item"><a class="nav-link active px-4 py-2" href="#" onclick="switchMode('blk','individual',this)">🔢 Individual</a></li>
+      <li class="nav-item"><a class="nav-link px-4 py-2" href="#" onclick="switchMode('blk','tabela',this)">📋 Tabela</a></li>
+    </ul>
+
+    <div id="blk-mode-individual">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="card">
+            <div class="card-header-gold">Entrada</div>
+            <div class="card-body" id="blk-input-fields"></div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-header-gold">Resultado</div>
+            <div class="card-body">
+              <div class="row g-3 mb-3" id="blk-metrics"></div>
+              <div id="block-plot" style="height:380px"></div>
+              <div id="blk-isatis-warn" class="warn-isatis mt-2 d-none">
+                ⚠️ Isatis.neo: sinal do mergulho a confirmar com documentação oficial.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="blk-mode-tabela" class="d-none">
+      <div class="card mb-3">
+        <div class="card-header-gold">Entrada</div>
+        <div class="card-body">
+          <div class="mb-2 d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-secondary" onclick="blkAddRow()">＋ Adicionar linha</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="blkPasteCSV()">📋 Colar CSV</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="blkLoadExample()">📂 Carregar exemplo</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm tbl-editable">
+              <thead id="blk-input-thead"></thead>
+              <tbody id="blk-input-tbody"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-convert mt-2" onclick="convertBlkTable()">🔄 Converter Tabela</button>
+        </div>
+      </div>
+      <div class="card d-none" id="blk-result-card">
+        <div class="card-header-gold">Resultado</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6"><p class="fw-semibold mb-1 text-muted small">ENTRADA</p>
+              <div class="table-responsive"><table class="table table-sm result-table" id="blk-result-in"></table></div></div>
+            <div class="col-md-6"><p class="fw-semibold mb-1 text-muted small">SAÍDA</p>
+              <div class="table-responsive"><table class="table table-sm result-table" id="blk-result-out"></table></div></div>
+          </div>
+          <button class="btn btn-outline-download mt-3" onclick="downloadBlkResult()">⬇️ Baixar CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       ── COORDENADAS ──
+  ══════════════════════════════════════════════════ -->
+  <div id="page-coords" class="d-none">
+    <h4 class="fw-bold mb-1">📍 Coordenadas de Pontos e Sondagens</h4>
+    <p class="text-muted small mb-3">Reformatação de colunas e conversão de convenção de Z.</p>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-5">
+        <label class="form-label fw-semibold">Convenção de origem</label>
+        <select class="form-select" id="coord-src">
+          <option>Leapfrog</option>
+          <option>Isatis.neo</option>
+          <option>Vulcan — pontos</option>
+          <option>Vulcan — sondagens (Z profundidade → cota)</option>
+        </select>
+      </div>
+    </div>
+
+    <ul class="nav mode-tabs gap-2 mb-3">
+      <li class="nav-item"><a class="nav-link active px-4 py-2" href="#" onclick="switchMode('coord','manual',this)">✏️ Manual</a></li>
+      <li class="nav-item"><a class="nav-link px-4 py-2" href="#" onclick="switchMode('coord','csv',this)">📂 Colar CSV</a></li>
+    </ul>
+
+    <!-- Manual -->
+    <div id="coord-mode-manual">
+      <div class="card mb-3">
+        <div class="card-header-gold">Tabela de entrada</div>
+        <div class="card-body">
+          <div class="mb-2 d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="coordAddRow()">＋ Adicionar linha</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="coordLoadExample()">📂 Exemplo</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm tbl-editable">
+              <thead><tr><th>X (Leste)</th><th>Y (Norte)</th><th id="coord-z-header">Z</th><th></th></tr></thead>
+              <tbody id="coord-tbody"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-convert mt-2" onclick="convertCoords()">🔄 Converter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV paste -->
+    <div id="coord-mode-csv" class="d-none">
+      <div class="card mb-3">
+        <div class="card-header-gold">Cole o conteúdo do CSV</div>
+        <div class="card-body">
+          <textarea class="form-control font-monospace" id="coord-csv-text" rows="8"
+            placeholder="X,Y,Z&#10;350000,7500000,800&#10;350010,7500015,780"></textarea>
+          <button class="btn btn-convert mt-3" onclick="convertCoordsCSV()">🔄 Converter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="card d-none" id="coord-result-card">
+      <div class="card-header-gold">Resultado</div>
+      <div class="card-body">
+        <div id="coord-flip-notice" class="warn-isatis mb-3 d-none">
+          ✅ Z invertido: profundidade (positivo ↓) → cota geográfica (positivo ↑)
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6"><p class="fw-semibold mb-1 text-muted small">ENTRADA</p>
+            <div class="table-responsive"><table class="table table-sm result-table" id="coord-result-in"></table></div></div>
+          <div class="col-md-6"><p class="fw-semibold mb-1 text-muted small">SAÍDA (X, Y, Z cota)</p>
+            <div class="table-responsive"><table class="table table-sm result-table" id="coord-result-out"></table></div></div>
+        </div>
+        <button class="btn btn-outline-download mt-3" onclick="downloadCoordsResult()">⬇️ Baixar CSV</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ═══ CSV PASTE MODAL ═══ -->
+<div class="modal fade" id="csvModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">📋 Colar CSV</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="small text-muted">Cole o conteúdo do CSV abaixo. A primeira linha deve conter os cabeçalhos.</p>
+        <textarea class="form-control font-monospace" id="csv-paste-area" rows="10"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-convert" id="csv-paste-confirm">Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/math.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
