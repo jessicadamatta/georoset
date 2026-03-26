@@ -5,7 +5,7 @@
 
 **Conversor open-source de convenções geológicas entre Leapfrog, Isatis.neo e Vulcan.**
 
-Geólogos e engenheiros de minas frequentemente precisam migrar dados estruturais, parâmetros de variograma e rotações de modelos de blocos entre softwares — cada um com sua própria convenção de ângulos. O GeoRoset automatiza essas conversões com validação visual integrada.
+Geólogos e engenheiros de minas frequentemente precisam migrar dados estruturais, parâmetros de variograma e rotações de modelos de blocos entre softwares, cada um com sua própria convenção de ângulos. O GeoRoset automatiza essas conversões com validação visual integrada.
 
 ---
 
