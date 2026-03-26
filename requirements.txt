@@ -2,6 +2,5 @@ streamlit
 numpy
 scipy
 plotly
-mplstereonet
 pandas
 pytest
