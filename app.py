@@ -4,22 +4,35 @@ st.set_page_config(
     page_title="GeoRoset",
     page_icon="🪨",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-st.sidebar.title("🪨 GeoRoset")
-st.sidebar.caption("Conversor de convenções geológicas")
-st.sidebar.divider()
+# ── Sidebar ────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.image("https://img.shields.io/badge/GeoRoset-v0.1-D4A843?style=for-the-badge")
+    st.caption("Conversor de convenções geológicas")
+    st.divider()
 
-page = st.sidebar.radio(
-    "Navegação",
-    ["🏠 Início", "🪨 Discos Estruturais", "📡 Variograma", "📦 Modelo de Blocos", "📍 Coordenadas"],
-)
+    page = st.radio(
+        "**Navegação**",
+        options=[
+            "🏠 Início",
+            "🪨 Discos Estruturais",
+            "📡 Variograma",
+            "📦 Modelo de Blocos",
+            "📍 Coordenadas",
+        ],
+        label_visibility="visible",
+    )
 
-st.sidebar.divider()
-st.sidebar.markdown("[![GitHub](https://img.shields.io/badge/GitHub-open--source-black)](https://github.com/jessicadamatta/georoset)")
-st.sidebar.caption("MIT License · Contribuições bem-vindas")
+    st.divider()
+    st.markdown(
+        "[![GitHub](https://img.shields.io/badge/GitHub-jessicadamatta-black?logo=github)]"
+        "(https://github.com/jessicadamatta/georoset)"
+    )
+    st.caption("MIT License · Contribuições bem-vindas")
 
+# ── Roteamento ─────────────────────────────────────────────────────────────
 if page == "🏠 Início":
     from help_system import render_about_panel
     render_about_panel()

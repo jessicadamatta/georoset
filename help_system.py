@@ -40,31 +40,47 @@ def render_about_panel():
     """
     Renderiza o painel de instruções da página inicial (app.py).
     """
+    st.markdown("## 🪨 GeoRoset")
+    st.markdown("**Conversor open-source de convenções geológicas entre Leapfrog, Isatis.neo e Vulcan.**")
+    st.divider()
+
+    col1, col2 = st.columns(2, gap="large")
+
+    with col1:
+        st.markdown("""
+### Como usar
+
+1. Selecione a **página** na barra lateral
+2. Escolha o **software de origem** e o de **destino**
+3. **Conversão individual** — insira os ângulos e clique em Converter
+4. **Conversão em tabela** — digite ou carregue um CSV com múltiplos valores
+5. Verifique o **gráfico de validação** — original (azul) e convertido (vermelho) devem se sobrepor
+6. Baixe os resultados em CSV
+""")
+
+    with col2:
+        st.markdown("""
+### Páginas disponíveis
+
+| Página | Converte | Gráfico |
+|---|---|---|
+| 🪨 Discos Estruturais | Dip/Dip Direction ↔ Bearing/Plunge | Esteronet de Schmidt |
+| 📡 Variograma | Ângulos de anisotropia | Elipsoide 3D |
+| 📦 Modelo de Blocos | Rotação dos eixos do grid | Caixa 3D com vetores |
+| 📍 Coordenadas | Colunas e convenção de Z | — |
+""")
+
+    st.divider()
+
     st.markdown("""
-    ## 🪨 GeoRoset
-    **Conversor de convenções geológicas entre Leapfrog, Isatis.neo e Vulcan.**
+### Convenções resumidas
 
-    ### Como usar
-    1. Selecione a página na barra lateral correspondente ao tipo de objeto a converter
-    2. Escolha o **software de origem** e insira os ângulos
-    3. Escolha o **software de destino**
-    4. Clique em **Converter**
-    5. Verifique o resultado numérico e o **gráfico de validação** — os dois objetos devem se sobrepor
+| | **Leapfrog** | **Isatis.neo** | **Vulcan** |
+|---|---|---|---|
+| **Disco** | Dip Direction + Dip | Azimute + Dip *(igual LF)* | Bearing da **normal** + Plunge |
+| **Variograma** | Z-X-Z: Rz(−α)·Rx(−β)·Rz(γ) | Z-X-X: Rz(−α)·Rx(−β)·Rx(ω) | X-Y-Z: Rx(α)·Ry(β)·Rz(γ) |
+| **Blocos** | Z-X-Z: Rz(α)·Rx(β)·Rz(γ) | Z-X-Z *(sinais a confirmar)* | X-Y-Z: Rx(α)·Ry(β)·Rz(γ) |
 
-    ### Páginas disponíveis
-
-    | Página | O que converte |
-    |---|---|
-    | 🪨 Discos Estruturais | Dip/Dip Direction ↔ Bearing/Plunge |
-    | 📡 Parâmetros de Variograma | Ângulos de anisotropia entre softwares |
-    | 📦 Modelo de Blocos | Rotação dos eixos do grid de blocos |
-    | 📍 Coordenadas | Reformatação e reprojeção de pontos/sondagens |
-
-    ### Validação visual
-    Cada página exibe um gráfico onde o objeto **original** (azul) e o objeto **convertido** (vermelho)
-    são plotados no mesmo espaço. Se a conversão estiver correta, eles se sobrepõem perfeitamente.
-
-    > ⚠️ Onde houver incerteza sobre a convenção exata do Isatis.neo, o resultado é marcado com
-    > um aviso amarelo e uma flag editável no código (`ISATIS_NEO_SIGN_CONVENTION`).
-    """)
+> ⚠️ Onde houver incerteza sobre o Isatis.neo, o resultado é marcado com aviso amarelo.
+""")
     render_help_button("referencias", "📚 Ver referências bibliográficas")
